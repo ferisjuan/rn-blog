@@ -8,7 +8,8 @@ const blogReducer = (state, action) => {
         ...state,
         {
           id: Math.floor(Math.random() * 99999),
-          title: `Blog Post #${state.length + 1}`,
+          title: action.payload.title,
+          content: action.payload.content
         }
       ];
     case "delete_blog_post":
@@ -18,13 +19,21 @@ const blogReducer = (state, action) => {
   }
 }
 
-const addBlogPost = (dispatch) => () => dispatch({ type: "add_blog_post" })
+const addBlogPost = (dispatch) => (content, title, callback) => {
+  dispatch({
+    type: "add_blog_post",
+    payload: { content, title },
+  })
+
+  callback()
+}
+
 const deletePost = (dispatch) => (id) => dispatch({ type: "delete_blog_post", payload: id })
 
 export const { Context, Provider } = CreateDataContext(
   blogReducer,
   { addBlogPost, deletePost },
-  []
+  [{ title: "test title", content: "test content", id: 1 }],
 )
 
 export const useBlogContext = () => useContext(Context)
