@@ -1,17 +1,10 @@
 import { useContext } from "react";
 import CreateDataContext from "../context/createDataContext";
 
+import jsonServer from "../api/jsonServer"
+
 const blogReducer = (state, action) => {
   switch (action.type) {
-    case "add_blog_post":
-      return [
-        ...state,
-        {
-          id: Math.floor(Math.random() * 99999),
-          title: action.payload.title,
-          content: action.payload.content
-        }
-      ];
     case "delete_blog_post":
       return state.filter((post) => post.id !== action.payload);
     case "edit_blog_post":
@@ -19,32 +12,50 @@ const blogReducer = (state, action) => {
         ? action.payload
         : post
       )
+    case "get_blogposts":
+      return action.payload
     default:
       return state;
   }
 }
 
-const addBlogPost = (dispatch) => (content, title, callback) => {
-  dispatch({
-    type: "add_blog_post",
-    payload: { content, title },
-  })
+const getPosts = dispatch => async () => {
+  const response = await jsonServer.get("/blogposts")
 
-  callback()
+  dispatch({
+    type: "get_blogposts",
+    payload: response.data
+  })
 }
 
-const deletePost = (dispatch) => (id) => dispatch({ type: "delete_blog_post", payload: id })
+const addBlogPost = () => async (content, title, callback) => {
+  await jsonServer.post("/blogposts", { title, content })
 
-const editPost = (dispatch) => (post, callback) => {
+  if (callback) {
+    callback()
+  }
+}
+
+const deletePost = (dispatch) => async (id) => {
+  await jsonServer.delete(`/blogposts/${id}`)
+
+  dispatch({ type: "delete_blog_post", payload: id })
+}
+
+const editPost = (dispatch) => async (post, callback) => {
+  await jsonServer.put(`/blogposts/${post.id}`, { title: post.title, content: post.content })
+
   dispatch({ type: "edit_blog_post", payload: post })
 
-  callback()
+  if (callback) {
+    callback()
+  }
 }
 
 export const { Context, Provider } = CreateDataContext(
   blogReducer,
-  { addBlogPost, deletePost, editPost },
-  [{ title: "test title", content: "test content", id: 1 }],
+  { addBlogPost, deletePost, editPost, getPosts },
+  []
 )
 
 export const useBlogContext = () => useContext(Context)
